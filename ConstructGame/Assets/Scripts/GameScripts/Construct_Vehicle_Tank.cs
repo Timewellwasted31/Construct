@@ -46,7 +46,27 @@ public class Construct_Vehicle_Tank : Construct_Vehicle
         LookLocation.y = Turret.transform.position.y;
     }
 
-
+    public override void Controlles()
+    {
+        base.Controlles();
+        LookLocation = Vector3.zero;
+        if (GamePad.GetAxis(GamePad.Axis.RightStick, Player) != Vector2.zero)
+        {
+            LookLocation.x = GamePad.GetAxis(GamePad.Axis.RightStick, Player).x;
+            LookLocation.z = GamePad.GetAxis(GamePad.Axis.RightStick, Player).y;
+        }
+        Vector3 targetDir = LookLocation;
+        float step = 1f * Time.deltaTime;
+        Vector3 newDir = Vector3.RotateTowards(Turret.transform.forward, targetDir, step, 0.0F);
+        Turret.transform.rotation = Quaternion.LookRotation(newDir);
+        timer -= Time.deltaTime;
+        timer = Mathf.Clamp(timer, 0, Mathf.Infinity);
+        if (GamePad.GetButtonDown(GamePad.Button.A, Player) && timer == 0)
+        {
+            Shoot();
+        }
+    }
+    /* KeyBoard Controlles
     public override void Controlles()
     {
         base.Controlles();
@@ -78,7 +98,7 @@ public class Construct_Vehicle_Tank : Construct_Vehicle
             Shoot();
         }
     }
-
+    */
 
     void Shoot()
     {

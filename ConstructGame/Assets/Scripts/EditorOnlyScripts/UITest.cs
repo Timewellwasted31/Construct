@@ -10,8 +10,9 @@ public class UITest : MonoBehaviour
        // Menu = new MenuControl(this.gameObject );
     }
 
-    public void Update()
+   /* public void Update()
     {
         Menu.MainLoop();
     }
+    */
 }
