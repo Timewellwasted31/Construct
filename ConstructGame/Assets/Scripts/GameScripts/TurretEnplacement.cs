@@ -59,24 +59,25 @@ public class TurretEnplacement : MonoBehaviour, IDamageable, IPlaceableObj
     {
         float first = 0;
         RaycastHit hit;
-        Debug.DrawRay(ContactPoints[0].position, Vector3.down * Mathf.Infinity);
-        if (Physics.Raycast(new Ray(ContactPoints[0].position, Vector3.down), out hit, Mathf.Infinity))
+        Vector3 CentrePoint = new Vector3(transform.position.x, ContactPoints[0].position.y, transform.position.z);
+        Debug.DrawRay(transform.position, Vector3.down * Mathf.Infinity);
+        if (Physics.Raycast(new Ray(CentrePoint, Vector3.down), out hit, Mathf.Infinity))
         {
             if (first == 0)
             {
-                first = Mathf.RoundToInt((ContactPoints[0].position - hit.point).magnitude);
+                first = Mathf.RoundToInt((CentrePoint - hit.point).magnitude);
             }
             else
             {
                 return false;
             }
         }
-        for (int i = 1; i < ContactPoints.Length; i++)
+        for (int i = 0; i < ContactPoints.Length; i++)
         {
             Debug.DrawRay(ContactPoints[i].position, Vector3.down * Mathf.Infinity);
             if (Physics.Raycast(new Ray(ContactPoints[i].position, Vector3.down), out hit, Mathf.Infinity))
             {
-                if (first < Mathf.RoundToInt((ContactPoints[i].position - hit.point).magnitude) || first > Mathf.RoundToInt((ContactPoints[i].position - hit.point).magnitude))
+                if (first < Mathf.RoundToInt((ContactPoints[i].position - hit.point).magnitude) || first > Mathf.RoundToInt((ContactPoints[i].position - hit.point).magnitude) || Physics.Raycast(new Ray(hit.point - ContactPoints[i].position, Vector3.down), (hit.point - ContactPoints[i].position).magnitude))
                 {
                     return false;
                 }

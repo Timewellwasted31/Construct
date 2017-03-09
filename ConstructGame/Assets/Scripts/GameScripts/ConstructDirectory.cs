@@ -20,7 +20,10 @@ public static class ConstructDirectory
         ProjectilePool = new List<Projectile>();
         ProjectilePrefabs = Resources.LoadAll<GameObject>("Projectiles");
         TurretPrefabs = Resources.LoadAll<GameObject>("Turrets");
-        List<Constructs> Import = ImportConstructs("../SwingingGame/Constructs");
+        TextAsset xmldata = Resources.Load("XML/Constructs") as TextAsset;
+        MemoryStream assetstream = new MemoryStream(xmldata.bytes);
+        var serilaizer = new XmlSerializer(typeof(List<Constructs>));
+        List<Constructs> Import = serilaizer.Deserialize(assetstream) as List<Constructs>;
         ConstructData Temp;
         for (int i = 0; i < Import.Count; i++)
         {
