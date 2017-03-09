@@ -14,11 +14,11 @@ public class Construct_Vehicle : ConstructData {
     protected float                BreakPower = 0f;
     protected float                Mass = 200;
     protected float                TurningCircle = 5f;
-    protected float                TurningSpeed = 10f;
+    protected float                TurningSpeed = 0.5f;
     protected bool                 isOnGround;
     Rigidbody PlayerRb;
 
-    public override void Controlles(){ DrivingControllesTest(); }
+    public override void Controlles(){ DrivingControlles(); }
     public Construct_Vehicle() { }
 
     public override void SetUp(Transform Player, GamePad.Index PlayerNum)
@@ -42,7 +42,7 @@ public class Construct_Vehicle : ConstructData {
             PlayerRb.constraints = RigidbodyConstraints.FreezeRotationY;
         }
     }
-
+    /* KeyBoard Controlles
     public void DrivingControllesTest()
     {
         isOnGround = Physics.Raycast(Owner.position, -Owner.up, 1f);
@@ -102,6 +102,55 @@ public class Construct_Vehicle : ConstructData {
             float step = TurningSpeed * Time.deltaTime;
             targetDir = Vector3.Lerp(Owner.forward, targetDir * Mathf.Sign(Lead.z), step);
             Owner.transform.rotation =  Quaternion.Euler(Owner.transform.rotation.eulerAngles.x, Quaternion.LookRotation(targetDir, Owner.up).eulerAngles.y, Owner.transform.rotation.eulerAngles.z);
+        }
+        else
+        {
+            Lead = Vector3.zero;
+        }
+    }
+    */
+
+    public void DrivingControlles()
+    {
+        isOnGround = Physics.Raycast(Owner.position, -Owner.up, 1f);
+        BreakPower = 0;
+        LocalVelocity = Owner.InverseTransformVector(PlayerRb.velocity);
+
+        if (GamePad.GetAxis(GamePad.Axis.LeftStick, Player) != Vector2.zero && Mathf.Abs(Lead.z) > MinSpeed)
+        { 
+             Lead.x = GamePad.GetAxis(GamePad.Axis.LeftStick, Player).x * TurningCircle;
+        }
+        else { Lead.x = 0; }
+
+        if (GamePad.GetTrigger(GamePad.Trigger.RightTrigger, Player) != 0)
+        {
+            Lead.z += Acceleration;
+            Lead.z = Mathf.Clamp(Lead.z, -MaxSpeed, MaxSpeed);
+        }
+        if (GamePad.GetTrigger(GamePad.Trigger.LeftTrigger, Player) != 0)
+        {
+            Lead.z -= Acceleration;
+            Lead.z = Mathf.Clamp(Lead.z, -MaxSpeed, MaxSpeed);
+        }
+        else if (Mathf.Abs(Lead.z) > 0)
+        {
+            if (Mathf.Abs(Lead.z) > (-SlowConst.z * Time.deltaTime))
+            {
+                Lead.z = Lead.z + (Mathf.Sign(Lead.z) * (SlowConst.z * Time.deltaTime));
+            }
+            else
+            {
+                Lead.z = 0;
+            }
+        }
+        if (isOnGround)
+        {
+            //Debug.DrawLine(Owner.transform.position, Owner.transform.rotation * Lead + Owner.transform.position, Color.blue, 10f);
+            PlayerRb.velocity = new Vector3((Owner.rotation * Lead).x, PlayerRb.velocity.y, (Owner.rotation * Lead).z);
+            Vector3 targetDir = Owner.rotation * Lead;
+            float step = TurningSpeed * Mathf.Abs(Lead.z/2) * Time.deltaTime;
+            targetDir = Vector3.Lerp(Owner.forward, targetDir * Mathf.Sign(Lead.z), step);
+            Owner.transform.rotation = Quaternion.Euler(Owner.transform.rotation.eulerAngles.x, Quaternion.LookRotation(targetDir, Owner.up).eulerAngles.y, Owner.transform.rotation.eulerAngles.z);
         }
         else
         {
