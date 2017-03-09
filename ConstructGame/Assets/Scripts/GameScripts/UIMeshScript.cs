@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-using GamepadInput;
 
 public class MenuControl
 {
@@ -12,8 +11,6 @@ public class MenuControl
     Texture2D Atlas;
     [SerializeField]bool isDisplaying = false;
     [SerializeField]MenuOptions Mode = MenuOptions.Home;
-    Vector2 DpadAxis = Vector2.zero;
-    Vector2 Last = Vector2.zero;
     static Dictionary<ConstructType, Vector2[]> DisplayMapping = new Dictionary<ConstructType, Vector2[]>
     {
         {ConstructType.CubeGuy, TileUVIndex.CubeGuy},
@@ -27,8 +24,8 @@ public class MenuControl
     {
         Owner = owner;
         Atlas = Resources.Load<Texture2D>("IconAtlas");
-        UIData = new UITileMap[3, 3];
-        for (int i = 0; i < 3; i++)
+        UIData = new UITileMap[3,3];
+        for(int i = 0; i < 3; i++)
         {
             UIData[i, 0] = new UITileMap(TileUVIndex.Trans);
             UIData[i, 1] = new UITileMap(TileUVIndex.Trans);
@@ -36,120 +33,112 @@ public class MenuControl
         }
         UI = new UIMeshScript();
         MeshObj = DisplayMesh;
-        UI.init(15, 15, MeshObj);
+        UI.init(15,15,MeshObj);
         UI.BuildUVMap(Atlas, UIData);
         UI.SetTexture(Atlas);
         ChangeDisplay();
         UI.Show(isDisplaying);
     }
 
-    public void MainLoop(GamePad.Index Player)
+    public void MainLoop()
     {
         if (isDisplaying == true)
         {
             MeshObj.transform.rotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
-            if (GamePad.GetAxis(GamePad.Axis.Dpad, Player) != Last)
+            if (Input.GetKeyDown(KeyCode.Keypad1))
             {
-                DpadAxis = GamePad.GetAxis(GamePad.Axis.Dpad, Player);
-
-                if (DpadAxis == Vector2.up)
+                switch (Mode)
                 {
-                    switch (Mode)
-                    {
-                        case MenuOptions.Home:
-                            Mode = MenuOptions.Construct;
-                            ChangeDisplay();
-                            break;
-                        case MenuOptions.Construct:
-                            Owner.CurrentConstruct.Reset();
-                            Owner.ConstructIndex = 0;
-                            Owner.ClearToChange();
-                            Mode = MenuOptions.Home;
-                            isDisplaying = false;
-                            UI.Show(isDisplaying);
-                            break;
-                        case MenuOptions.Building:
-                            Owner.CurrentConstruct.setTurret(TurretTypes.MG);
-                            Owner.CurrentConstruct.setMode(BuildMode.Turrets);
-                            Mode = MenuOptions.Home;
-                            isDisplaying = false;
-                            UI.Show(isDisplaying);
-                            break;
-                        default:
-                            Debug.Log("was set to last");
-                            break;
-                    }
+                    case MenuOptions.Home:
+                        Mode = MenuOptions.Construct;
+                        ChangeDisplay();
+                        break;
+                    case MenuOptions.Construct:
+                        Owner.CurrentConstruct.Reset();
+                        Owner.ConstructIndex = 0;
+                        Owner.ClearToChange();
+                        Mode = MenuOptions.Home;
+                        isDisplaying = false;
+                        UI.Show(isDisplaying);
+                        break;
+                    case MenuOptions.Building:
+                        Owner.CurrentConstruct.setTurret(TurretTypes.MG);
+                        Owner.CurrentConstruct.setMode(BuildMode.Turrets);
+                        Mode = MenuOptions.Home;
+                        isDisplaying = false;
+                        UI.Show(isDisplaying);
+                        break;
+                    default:
+                        Debug.Log("was set to last");
+                        break;
                 }
-                if (DpadAxis == Vector2.right)
-                {
-                    switch (Mode)
-                    {
-                        case MenuOptions.Construct:
-                            Owner.CurrentConstruct.Reset();
-                            Owner.ConstructIndex = 1;
-                            Owner.ClearToChange();
-                            Mode = MenuOptions.Home;
-                            isDisplaying = false;
-                            UI.Show(isDisplaying);
-                            break;
-                        default:
-                            Debug.Log("was set to last");
-                            break;
-                    }
-                }
-                if (DpadAxis == Vector2.down)
-                {
-                    switch (Mode)
-                    {
-                        case MenuOptions.Home:
-                            Mode = MenuOptions.Building;
-                            ChangeDisplay();
-                            break;
-                        case MenuOptions.Construct:
-                            Owner.CurrentConstruct.Reset();
-                            Owner.ConstructIndex = 2;
-                            Owner.ClearToChange();
-                            Mode = MenuOptions.Home;
-                            isDisplaying = false;
-                            UI.Show(isDisplaying);
-                            break;
-                        case MenuOptions.Building:
-                            Owner.CurrentConstruct.setMode(BuildMode.Wall);
-                            Mode = MenuOptions.Home;
-                            isDisplaying = false;
-                            UI.Show(isDisplaying);
-                            break;
-                        default:
-                            Debug.Log("was set to last");
-                            break;
-                    }
-                }
-                if (DpadAxis == Vector2.left)
-                {
-                    switch (Mode)
-                    {
-                        case MenuOptions.Construct:
-                            Owner.CurrentConstruct.Reset();
-                            Owner.ConstructIndex = 3;
-                            Owner.ClearToChange();
-                            Mode = MenuOptions.Home;
-                            isDisplaying = false;
-                            UI.Show(isDisplaying);
-                            break;
-                        default:
-                            Debug.Log("was set to last");
-                            break;
-                    }
-                }
-                Last = DpadAxis;
             }
-            if (GamePad.GetButtonDown(GamePad.Button.B, Player))
+            if (Input.GetKeyDown(KeyCode.Keypad2))
+            {
+                switch (Mode)
+                {
+                    case MenuOptions.Construct:
+                        Owner.CurrentConstruct.Reset();
+                        Owner.ConstructIndex = 1;
+                        Owner.ClearToChange();
+                        Mode = MenuOptions.Home;
+                        isDisplaying = false;
+                        UI.Show(isDisplaying);
+                        break;
+                    default:
+                        Debug.Log("was set to last");
+                        break;
+                }
+            }
+            if (Input.GetKeyDown(KeyCode.Keypad3))
+            {
+                switch (Mode)
+                {
+                    case MenuOptions.Home:
+                        Mode = MenuOptions.Building;
+                        ChangeDisplay();
+                        break;
+                    case MenuOptions.Construct:
+                        Owner.CurrentConstruct.Reset();
+                        Owner.ConstructIndex = 2;
+                        Owner.ClearToChange();
+                        Mode = MenuOptions.Home;
+                        isDisplaying = false;
+                        UI.Show(isDisplaying);
+                        break;
+                    case MenuOptions.Building:
+                        Owner.CurrentConstruct.setMode(BuildMode.Wall);
+                        Mode = MenuOptions.Home;
+                        isDisplaying = false;
+                        UI.Show(isDisplaying);
+                        break;
+                    default:
+                        Debug.Log("was set to last");
+                        break;
+                }
+            }
+            if (Input.GetKeyDown(KeyCode.Keypad4))
+            {
+                switch (Mode)
+                {
+                    case MenuOptions.Construct:
+                        Owner.CurrentConstruct.Reset();
+                        Owner.ConstructIndex = 3;
+                        Owner.ClearToChange();
+                        Mode = MenuOptions.Home;
+                        isDisplaying = false;
+                        UI.Show(isDisplaying);
+                        break;
+                    default:
+                        Debug.Log("was set to last");
+                        break;
+                }
+            }
+            if (Input.GetKeyDown(KeyCode.B))
             {
                 if (Mode != MenuOptions.Home)
                 {
                     Mode = MenuOptions.Home;
-                    ChangeDisplay();
-                    Last = Vector2.zero;
                 }
                 else
                 {
@@ -160,142 +149,17 @@ public class MenuControl
         }
         else
         {
-            if (GamePad.GetAxis(GamePad.Axis.Dpad, Player) != Last)
+            if (Input.GetKeyDown(KeyCode.Keypad1))
             {
-                DpadAxis = GamePad.GetAxis(GamePad.Axis.Dpad, Player);
-                Last = DpadAxis;
-                if (DpadAxis == Vector2.up)
-                {
-                    Mode = MenuOptions.Home;
-                    isDisplaying = true;
-                    ChangeDisplay();
-                    UI.Show(isDisplaying);
-                }
+                Mode = MenuOptions.Home;
+                isDisplaying = true;
+                ChangeDisplay();
+                UI.Show(isDisplaying);
             }
         }
+
     }
 
-    /*KeyBoard Controlles
-        public void MainLoop()
-        {
-            if (isDisplaying == true)
-            {
-                MeshObj.transform.rotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
-                if (Input.GetKeyDown(KeyCode.Keypad1))
-                {
-                    switch (Mode)
-                    {
-                        case MenuOptions.Home:
-                            Mode = MenuOptions.Construct;
-                            ChangeDisplay();
-                            break;
-                        case MenuOptions.Construct:
-                            Owner.CurrentConstruct.Reset();
-                            Owner.ConstructIndex = 0;
-                            Owner.ClearToChange();
-                            Mode = MenuOptions.Home;
-                            isDisplaying = false;
-                            UI.Show(isDisplaying);
-                            break;
-                        case MenuOptions.Building:
-                            Owner.CurrentConstruct.setTurret(TurretTypes.MG);
-                            Owner.CurrentConstruct.setMode(BuildMode.Turrets);
-                            Mode = MenuOptions.Home;
-                            isDisplaying = false;
-                            UI.Show(isDisplaying);
-                            break;
-                        default:
-                            Debug.Log("was set to last");
-                            break;
-                    }
-                }
-                if (Input.GetKeyDown(KeyCode.Keypad2))
-                {
-                    switch (Mode)
-                    {
-                        case MenuOptions.Construct:
-                            Owner.CurrentConstruct.Reset();
-                            Owner.ConstructIndex = 1;
-                            Owner.ClearToChange();
-                            Mode = MenuOptions.Home;
-                            isDisplaying = false;
-                            UI.Show(isDisplaying);
-                            break;
-                        default:
-                            Debug.Log("was set to last");
-                            break;
-                    }
-                }
-                if (Input.GetKeyDown(KeyCode.Keypad3))
-                {
-                    switch (Mode)
-                    {
-                        case MenuOptions.Home:
-                            Mode = MenuOptions.Building;
-                            ChangeDisplay();
-                            break;
-                        case MenuOptions.Construct:
-                            Owner.CurrentConstruct.Reset();
-                            Owner.ConstructIndex = 2;
-                            Owner.ClearToChange();
-                            Mode = MenuOptions.Home;
-                            isDisplaying = false;
-                            UI.Show(isDisplaying);
-                            break;
-                        case MenuOptions.Building:
-                            Owner.CurrentConstruct.setMode(BuildMode.Wall);
-                            Mode = MenuOptions.Home;
-                            isDisplaying = false;
-                            UI.Show(isDisplaying);
-                            break;
-                        default:
-                            Debug.Log("was set to last");
-                            break;
-                    }
-                }
-                if (Input.GetKeyDown(KeyCode.Keypad4))
-                {
-                    switch (Mode)
-                    {
-                        case MenuOptions.Construct:
-                            Owner.CurrentConstruct.Reset();
-                            Owner.ConstructIndex = 3;
-                            Owner.ClearToChange();
-                            Mode = MenuOptions.Home;
-                            isDisplaying = false;
-                            UI.Show(isDisplaying);
-                            break;
-                        default:
-                            Debug.Log("was set to last");
-                            break;
-                    }
-                }
-                if (Input.GetKeyDown(KeyCode.B))
-                {
-                    if (Mode != MenuOptions.Home)
-                    {
-                        Mode = MenuOptions.Home;
-                    }
-                    else
-                    {
-                        isDisplaying = false;
-                        UI.Show(isDisplaying);
-                    }
-                }
-            }
-            else
-            {
-                if (Input.GetKeyDown(KeyCode.Keypad1))
-                {
-                    Mode = MenuOptions.Home;
-                    isDisplaying = true;
-                    ChangeDisplay();
-                    UI.Show(isDisplaying);
-                }
-            }
-
-        }
-        */
 
     public void ChangeDisplay()
     {

@@ -129,7 +129,7 @@ public class CubePlayer : MonoBehaviour , IDamageable
                 else
                 {
                     ChangingConfigureation = false;
-                    Menu.MainLoop(PlayerNum);
+                    Menu.MainLoop();
                     CurrentConstruct.Controlles();
                 }
             }
