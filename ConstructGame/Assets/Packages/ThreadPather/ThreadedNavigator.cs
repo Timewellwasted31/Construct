@@ -83,7 +83,7 @@ public class ThreadedNavigator : MonoBehaviour {
         NavPathRequest r = new NavPathRequest(entry, exit, tolerance);
         int t = ThreadRunner.CreateThread(new ParameterizedThreadStart(main.ThreadFindPathObject), (object)r);
 
-        Debug.Log("Created pathing thread #" + t);
+        // Debug.Log("Created pathing thread #" + t);
 
         ThreadRunner.StartThread(t);
         return t;
@@ -372,11 +372,28 @@ public class ThreadedNavigator : MonoBehaviour {
         yield return null;
     }
 
+
+    /*
+     * NAV MESH DEPLOYMENT
+     */
+
+    static Coroutine NavRoutine = null;
     public static void GenerateNavMesh() {
-        main.StartCoroutine(main.ProduceData(main.m_origin, main.m_scanradius, main.m_scanResolution));
+        if (NavRoutine != null) {
+            main.StopCoroutine(NavRoutine);
+        }
+        NavRoutine = main.StartCoroutine(main.ProduceData(main.m_origin, main.m_scanradius, main.m_scanResolution));
     }
 
+    /// <summary>
+    ///   Produces nav grid from mesh collsion data.
+    /// </summary>
+    /// <param name="origin">The center of the scan space.</param>
+    /// <param name="bounds">The limits of the scan space, in unassigned manhattan radius.</param>
+    /// <param name="resolution">The slicing radius of the scan space.</param>
+    /// <returns>Nothing. Coroutine.</returns>
     IEnumerator ProduceData(Vector3 origin, Vector3 bounds, float resolution) {
+        // Debug.Log("Producing Navigation Data...");
         float realtime = Time.realtimeSinceStartup;
         xz_NavTable = new Dictionary<Vector2, List<ThreadedNavNode>>();
 
@@ -396,25 +413,17 @@ public class ThreadedNavigator : MonoBehaviour {
                 xz_NavTable.Add(tv2, new List<ThreadedNavNode>());
         
         for (int i = 0; i < hits.Length; i++) {
-
-
             xz_NavTable[tv2].Add(new ThreadedNavNode(hits[i].point));
-
         }
 
         Vector2 prekey = tv2;
 
         Vector3[] cardinals = new Vector3[4] { Vector3.forward, Vector3.right, Vector3.back, Vector3.left };
-
-
-
+        
         // raycast along each axis, then do points to points
         for (int c = 0; c < 4; c++) {
             float boundingvalue = Mathf.Abs(Vector3.Dot(cardinals[c], bounds));
             for (float s = 0; s <= boundingvalue; s += resolution) {
-
-
-
                 // a step to the left
                 r.origin = origin_at_height + cardinals[c] * s;
                 hits = Physics.RaycastAll(r, bounds.y * 2, PathingLayer.value);
@@ -425,7 +434,6 @@ public class ThreadedNavigator : MonoBehaviour {
                     xz_NavTable.Add(tv2, new List<ThreadedNavNode>());
 
                 for (int n = 0; n < hits.Length; n++) {
-
                     xz_NavTable[tv2].Add(new ThreadedNavNode(hits[n].point));
                     Ray d = new Ray(hits[n].point + m_PathingHeight * Vector3.up, Vector3.zero);
                     Ray d2 = new Ray();
@@ -436,14 +444,12 @@ public class ThreadedNavigator : MonoBehaviour {
                         // if there is no obstacle between the two nodes, they connect
                         d2.origin = xz_NavTable[prekey][i].getOrigin() + m_PathingHeight * Vector3.up;
                         d2.direction = -d.direction;
-
-
+                        
                         bool h = Physics.Raycast(d, d.direction.magnitude, PathingLayer.value);
                         if (!h) {
                             xz_NavTable[tv2][n].addExit(new WeightedThreadedNavNodeExit(xz_NavTable[prekey][i], d.direction.magnitude));
                             Debug.DrawRay(d.origin, 0.5f * d.direction, Color.green, 0.5f, false);
                         } else {
-
                             Debug.DrawRay(d.origin, 0.5f * d.direction, Color.red, 1f, false);
                         }
 
@@ -452,19 +458,23 @@ public class ThreadedNavigator : MonoBehaviour {
                             xz_NavTable[prekey][i].addExit(new WeightedThreadedNavNodeExit(xz_NavTable[tv2][n], d.direction.magnitude));
                             Debug.DrawRay(d2.origin, 0.5f * d2.direction, Color.green, 0.5f, false);
                         } else {
-
                             Debug.DrawRay(d2.origin, 0.5f * d2.direction, Color.red, 1f, false);
                         }
 
-                        if (Time.realtimeSinceStartup - realtime > m_ScanDeltaMax) { realtime = Time.realtimeSinceStartup; yield return null; }
+                        if (Time.realtimeSinceStartup - realtime > m_ScanDeltaMax) {
+                            realtime = Time.realtimeSinceStartup;
+                            yield return null;
+                        }
 
                     }
 
                 }
-
-
+                
                 prekey = tv2;
-                if (Time.realtimeSinceStartup - realtime > m_ScanDeltaMax) { realtime = Time.realtimeSinceStartup; yield return null; }
+                if (Time.realtimeSinceStartup - realtime > m_ScanDeltaMax) {
+                    realtime = Time.realtimeSinceStartup;
+                    yield return null;
+                }
             }
         }
         //Debug.Log("p: " + prekey);
@@ -495,7 +505,7 @@ public class ThreadedNavigator : MonoBehaviour {
 
                     // first, we raycast down.
                     hits = Physics.RaycastAll(r, 2 * bounds.y, PathingLayer.value);
-                    /*
+                    /* // DEBUG RAYCASTS
                     if (hits.Length > 0)
                         Debug.DrawRay(r.origin, r.direction * bounds.y * 2, Color.blue, 0.5f, false);
                     else {
@@ -522,9 +532,7 @@ public class ThreadedNavigator : MonoBehaviour {
                                 bool h = Physics.Raycast(r, resolution, PathingLayer.value);
                                 if (!h) {
                                     xz_NavTable[secondaddy][q].addExit(new WeightedThreadedNavNodeExit(mynode, r.direction.magnitude / resolution));
-
-                                    // try
-
+                                    
                                     Vector2 fli = new Vector2(mynode.getOrigin().x, mynode.getOrigin().z);
 
                                     if (xz_NavTable.ContainsKey(fli)) 
@@ -532,14 +540,12 @@ public class ThreadedNavigator : MonoBehaviour {
                                         if (xz_NavTable[fli][t].getOrigin() != mynode.getOrigin()) continue;
                                         xz_NavTable[fli][t].addExit(new WeightedThreadedNavNodeExit(xz_NavTable[secondaddy][q], r.direction.magnitude / resolution));
                                     }
-                                    // mynode.
 
                                     Debug.DrawLine(r.origin, xz_NavTable[secondaddy][q].getOrigin() + (resolution / 4f) * Vector3.up, Color.green, 0.5f);
                                 } else {
                                     Debug.DrawLine(r.origin, xz_NavTable[secondaddy][q].getOrigin() + (resolution / 4f) * Vector3.up, Color.red, 0.5f);
                                 }
                                 
-
                                 if (Time.realtimeSinceStartup - realtime > m_ScanDeltaMax) { realtime = Time.realtimeSinceStartup; yield return null; }
 
                             }
@@ -566,10 +572,6 @@ public class ThreadedNavigator : MonoBehaviour {
 
                                 if (!h) {
                                     xz_NavTable[secondaddy][q].addExit(new WeightedThreadedNavNodeExit(mynode, r.direction.magnitude / resolution));
-                                    // xz_NavTable[mynode.getOrigin()]
-
-                                    // try
-
 
                                     Vector2 fli = new Vector2(mynode.getOrigin().x, mynode.getOrigin().z);
                                     if (xz_NavTable.ContainsKey(fli)) 
@@ -577,7 +579,7 @@ public class ThreadedNavigator : MonoBehaviour {
                                         if (xz_NavTable[fli][t].getOrigin() != mynode.getOrigin()) continue;
                                         xz_NavTable[fli][t].addExit(new WeightedThreadedNavNodeExit(xz_NavTable[secondaddy][q], r.direction.magnitude / resolution));
                                     }
-                                    // mynode.
+
 
                                     Debug.DrawLine(r.origin, xz_NavTable[secondaddy][q].getOrigin() + (resolution / 4f) * Vector3.up, Color.green, 0.5f);
                                 } else {
@@ -590,8 +592,7 @@ public class ThreadedNavigator : MonoBehaviour {
 
                             }
                         }
-
-
+                        
                         // then take a step to the right
                         if (Time.realtimeSinceStartup - realtime > m_ScanDeltaMax) { realtime = Time.realtimeSinceStartup; yield return null; }
                     }
@@ -605,8 +606,8 @@ public class ThreadedNavigator : MonoBehaviour {
         }
         //Debug.Log("y: " + y);
 
-        // now, for all entries, if we have an exit, we backcopy to the other...
-
+        // Debug.Log("Navigational data deployed...");
+        NavRoutine = null;
     }
 }
 

@@ -3,12 +3,10 @@ using System.Collections;
 
 public class PathTest : MonoBehaviour {
 
-    [SerializeField]
-    Transform pointA;
-    [SerializeField]
-    Transform pointB;
-    [SerializeField]
-    bool Fire = false;
+    [SerializeField] Transform pointA;
+    [SerializeField] Transform pointB;
+    [SerializeField] bool Fire = false;
+    [SerializeField] bool SendEnemies = false;
 
 	// Use this for initialization
 	void Start () {
@@ -21,6 +19,9 @@ public class PathTest : MonoBehaviour {
             Fire = false;
             // ThreadedNavigator.GetPath(pointA.position, pointB.position);
             StartCoroutine(ThreadedNavigator.main.GetPathTest(pointA.position, pointB.position));
+        }else if (SendEnemies) {
+            SendEnemies = false;
+            ConstructEnemy.SendAllEnemiesTo(pointA.position);
         }
 	}
 }

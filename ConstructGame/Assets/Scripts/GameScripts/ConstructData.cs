@@ -231,7 +231,7 @@ public class MovingPartController
     {
         if (Part != null)
         {
-            Debug.Log("Line 202 : " + Container.name);
+            // Debug.Log("Line 202 : " + Container.name);
             Container.transform.parent = Owner.transform;
             Container.transform.localPosition = Part.ParentLoc;
             Container.transform.localRotation = Part.ParentRot;
@@ -244,7 +244,7 @@ public class MovingPartController
     {
         if (Part != null)
         {
-            Debug.Log("Line 215 : " + Parent.gameObject.name);
+            // Debug.Log("Line 215 : " + Parent.gameObject.name);
             Container.transform.parent = Parent.transform;
             Container.transform.localPosition = Part.ParentLoc;
             Container.transform.localRotation = Part.ParentRot;

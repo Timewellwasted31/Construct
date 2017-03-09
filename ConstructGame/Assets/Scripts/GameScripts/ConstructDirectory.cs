@@ -20,7 +20,7 @@ public static class ConstructDirectory
         ProjectilePool = new List<Projectile>();
         ProjectilePrefabs = Resources.LoadAll<GameObject>("Projectiles");
         TurretPrefabs = Resources.LoadAll<GameObject>("Turrets");
-        List<Constructs> Import = ImportConstructs("../SwingingGame/Constructs");
+        List<Constructs> Import = ImportConstructs("../ConstructGame/Constructs");
         ConstructData Temp;
         for (int i = 0; i < Import.Count; i++)
         {
