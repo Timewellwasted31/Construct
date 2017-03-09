@@ -27,7 +27,7 @@ public class Construct_Humanoid : ConstructData
     TurretTypes Ttype = TurretTypes.last;
     GameObject subject;
 
-    public override void Controlles() { HumanoidControlles(); }
+    public override void Controlles() { HumanoidControllesTest(); }
 
 
     public override void SetUp(Transform Player, GamePad.Index PlayerNum)
@@ -65,55 +65,92 @@ public class Construct_Humanoid : ConstructData
 
     public void HumanoidControlles()
     {
-        if (isBuilding)
+        WalkAnim();
+        LookLocation = Vector3.zero;
+        if (GamePad.GetAxis(GamePad.Axis.LeftStick, Player) != Vector2.zero)
+        {
+            LookLocation.x = GamePad.GetAxis(GamePad.Axis.LeftStick, Player).x;
+            LookLocation.z = GamePad.GetAxis(GamePad.Axis.LeftStick, Player).y;
+        }
+        LookLocation = LookLocation + Owner.position;
+        Owner.LookAt(LookLocation);
+    }
+
+    public void HumanoidControllesTest()
+    {
+        if(isBuilding)
         {
             BuildControlles();
         }
         WalkAnim();
         LookLocation = Vector3.zero;
         RaycastHit ht;
-        if (GamePad.GetAxis(GamePad.Axis.RightStick, Player) != Vector2.zero)
+        if (Input.GetKey(KeyCode.A))
         {
-            LookLocation.x = GamePad.GetAxis(GamePad.Axis.RightStick, Player).x;
-            LookLocation.z = GamePad.GetAxis(GamePad.Axis.RightStick, Player).y;
+            LookLocation.x = -1f;
         }
-        else
+        if (Input.GetKey(KeyCode.D))
         {
-            LookLocation.x = GamePad.GetAxis(GamePad.Axis.LeftStick, Player).x;
-            LookLocation.z = GamePad.GetAxis(GamePad.Axis.LeftStick, Player).y;
+            LookLocation.x = 1f;
+        }
+        if (Input.GetKey(KeyCode.W))
+        {
+            LookLocation.z = 1f;
+        }
+        if (Input.GetKey(KeyCode.S))
+        {
+            LookLocation.z = -1f;
         }
         Ray g;
         g = new Ray(Owner.position, -Owner.up);
         if (Physics.Raycast(g.origin, g.direction, out ht, 0.5f))
         {
-            if (GamePad.GetAxis(GamePad.Axis.LeftStick, Player) != Vector2.zero)
+            if (Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.DownArrow))
             {
-                MovementDirection.x = GamePad.GetAxis(GamePad.Axis.LeftStick, Player).x * MovementSpeed;
-                MovementDirection.z = GamePad.GetAxis(GamePad.Axis.LeftStick, Player).y * MovementSpeed;
-                PlayerRb.velocity = MovementDirection + new Vector3(0, PlayerRb.velocity.y, 0);
+
+                if (Input.GetKey(KeyCode.LeftArrow))
+                {
+                    MovementDirection.x = -1 * MovementSpeed;
+                }
+                else if (Input.GetKey(KeyCode.RightArrow))
+                {
+                    MovementDirection.x = 1 * MovementSpeed;
+                }
+                else
+                {
+                    MovementDirection.x = 0;
+                }
+                if (Input.GetKey(KeyCode.UpArrow))
+                {
+                    MovementDirection.z = 1 * MovementSpeed;
+                }
+                else if (Input.GetKey(KeyCode.DownArrow))
+                {
+                    MovementDirection.z = -1 * MovementSpeed;
+                }
+                else
+                {
+                    MovementDirection.z = 0;
+                }
+                PlayerRb.velocity = Owner.TransformVector(MovementDirection) + new Vector3(0, PlayerRb.velocity.y, 0);
             }
             else
             {
-                MovementDirection.x = 0;
-                MovementDirection.z = 0;
+                if (PlayerRb.velocity.y < 0)
+                {
+                    PlayerRb.velocity = new Vector3(0, PlayerRb.velocity.y, 0);
+                }
+                else
+                {
+                    PlayerRb.velocity = Vector3.zero;
+                }
             }
         }
-        else
-        {
-            if (PlayerRb.velocity.y < 0)
-            {
-                PlayerRb.velocity = new Vector3(0, PlayerRb.velocity.y, 0);
-            }
-            else
-            {
-                PlayerRb.velocity = Vector3.zero;
-            }
-        }
-        if (Owner.rotation.eulerAngles.x != 0 || Owner.rotation.eulerAngles.z != 0)
+        if(Owner.rotation.eulerAngles.x != 0 || Owner.rotation.eulerAngles.z != 0)
         {
             Vector3 oldRotation = Owner.transform.rotation.eulerAngles;
-            Vector3 newRotation = new Vector3(0, Owner.transform.rotation.eulerAngles.y, 0);
-            if (t <= 1.0) { t += 0.01f; }
+            Vector3 newRotation = new Vector3(0, Owner.transform.rotation.eulerAngles.y, 0) ;
+            if(t <= 1.0) { t += 0.01f; }
             oldRotation = (Quaternion.Slerp(Quaternion.Euler(oldRotation), Quaternion.Euler(newRotation), t)).eulerAngles;
             Owner.transform.rotation = Quaternion.Euler(oldRotation);
         }
@@ -127,161 +164,12 @@ public class Construct_Humanoid : ConstructData
         Owner.transform.rotation = Quaternion.LookRotation(newDir);
         timer -= Time.deltaTime;
         timer = Mathf.Clamp(timer, 0, Mathf.Infinity);
-        if (GamePad.GetTrigger(GamePad.Trigger.LeftTrigger, Player) != 0 && timer == 0)
+        if(Input.GetKeyDown(KeyCode.Space) && timer == 0)
         {
             RightArmOverride = true;
         }
     }
-    /* KeyBoard Controlles
-        public void HumanoidControllesTest()
-        {
-            if(isBuilding)
-            {
-                BuildControlles();
-            }
-            WalkAnim();
-            LookLocation = Vector3.zero;
-            RaycastHit ht;
-            if (Input.GetKey(KeyCode.A))
-            {
-                LookLocation.x = -1f;
-            }
-            if (Input.GetKey(KeyCode.D))
-            {
-                LookLocation.x = 1f;
-            }
-            if (Input.GetKey(KeyCode.W))
-            {
-                LookLocation.z = 1f;
-            }
-            if (Input.GetKey(KeyCode.S))
-            {
-                LookLocation.z = -1f;
-            }
-            Ray g;
-            g = new Ray(Owner.position, -Owner.up);
-            if (Physics.Raycast(g.origin, g.direction, out ht, 0.5f))
-            {
-                if (Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.DownArrow))
-                {
 
-                    if (Input.GetKey(KeyCode.LeftArrow))
-                    {
-                        MovementDirection.x = -1 * MovementSpeed;
-                    }
-                    else if (Input.GetKey(KeyCode.RightArrow))
-                    {
-                        MovementDirection.x = 1 * MovementSpeed;
-                    }
-                    else
-                    {
-                        MovementDirection.x = 0;
-                    }
-                    if (Input.GetKey(KeyCode.UpArrow))
-                    {
-                        MovementDirection.z = 1 * MovementSpeed;
-                    }
-                    else if (Input.GetKey(KeyCode.DownArrow))
-                    {
-                        MovementDirection.z = -1 * MovementSpeed;
-                    }
-                    else
-                    {
-                        MovementDirection.z = 0;
-                    }
-                    PlayerRb.velocity = Owner.TransformVector(MovementDirection) + new Vector3(0, PlayerRb.velocity.y, 0);
-                }
-                else
-                {
-                    if (PlayerRb.velocity.y < 0)
-                    {
-                        PlayerRb.velocity = new Vector3(0, PlayerRb.velocity.y, 0);
-                    }
-                    else
-                    {
-                        PlayerRb.velocity = Vector3.zero;
-                    }
-                }
-            }
-            if(Owner.rotation.eulerAngles.x != 0 || Owner.rotation.eulerAngles.z != 0)
-            {
-                Vector3 oldRotation = Owner.transform.rotation.eulerAngles;
-                Vector3 newRotation = new Vector3(0, Owner.transform.rotation.eulerAngles.y, 0) ;
-                if(t <= 1.0) { t += 0.01f; }
-                oldRotation = (Quaternion.Slerp(Quaternion.Euler(oldRotation), Quaternion.Euler(newRotation), t)).eulerAngles;
-                Owner.transform.rotation = Quaternion.Euler(oldRotation);
-            }
-            else
-            {
-                t = 0.0f;
-            }
-            Vector3 targetDir = LookLocation;
-            float step = 4f * Time.deltaTime;
-            Vector3 newDir = Vector3.RotateTowards(Owner.transform.forward, targetDir, step, 0.0F);
-            Owner.transform.rotation = Quaternion.LookRotation(newDir);
-            timer -= Time.deltaTime;
-            timer = Mathf.Clamp(timer, 0, Mathf.Infinity);
-            if(Input.GetKeyDown(KeyCode.Space) && timer == 0)
-            {
-                RightArmOverride = true;
-            }
-        }
-
-            public void BuildControlles()
-        {
-            if(subject != null)
-            {
-                subject.transform.position = Owner.transform.position + ((Owner.transform.forward * 8) + Owner.transform.up * 10);
-            }
-            if(Input.GetKeyDown(KeyCode.O))
-            {
-                if(Mode == BuildMode.Turrets)
-                {
-                    if (Ttype != TurretTypes.last && subject == null)
-                    {
-                        Debug.Log("Getting Turret");
-                        subject = ConstructDirectory.GetTurret(Ttype);
-                    }
-                    else
-                    {
-                        if(subject.GetComponent<IPlaceableObj>().Place(subject.transform.position))
-                        {
-                            subject = null;
-                        }
-                    }
-                }
-                else if(Mode == BuildMode.Wall)
-                {
-                    Ray r = new Ray(Owner.transform.position + Owner.transform.forward * 8,Vector3.down);
-                        Debug.Log("Click: " + r.origin);
-                        RaycastHit hit;
-                        Debug.DrawRay(r.origin, r.direction * 10f, Color.red);
-                        if (Physics.Raycast(r, out hit, Mathf.Infinity))
-                        {
-                            Debug.Log("Hit.");
-
-                            IClickable c = hit.collider.gameObject.GetComponent<IClickable>();
-                            if (c != null)
-                            {
-                                Debug.Log("Click action: " + hit.point);
-                                c.ClickAction(hit.point);
-                            }
-                        }
-                    }
-                else { Debug.Log("Error Build mode not set correctly"); }
-            }
-            else if(Input.GetKeyDown(KeyCode.P))
-            {
-                if (subject != null)
-                {
-                    GameObject.Destroy(subject.gameObject);
-                    subject = null;
-                    isBuilding = false;
-                    Mode = BuildMode.last;
-                }
-            }
-        }
-        */
     public override void setMode(BuildMode mode)
     {
         Mode = mode;
@@ -295,55 +183,53 @@ public class Construct_Humanoid : ConstructData
 
     public void BuildControlles()
     {
-        if (subject != null)
+        if(subject != null)
         {
             subject.transform.position = Owner.transform.position + ((Owner.transform.forward * 8) + Owner.transform.up * 10);
         }
-        if (GamePad.GetButtonDown(GamePad.Button.A, Player))
+        if(Input.GetKeyDown(KeyCode.O))
         {
-            if (Mode == BuildMode.Turrets)
+            if(Mode == BuildMode.Turrets)
             {
                 if (Ttype != TurretTypes.last && subject == null)
                 {
+                    Debug.Log("Getting Turret");
                     subject = ConstructDirectory.GetTurret(Ttype);
                 }
                 else
                 {
-                    if (subject.GetComponent<IPlaceableObj>().Place(subject.transform.position))
+                    if(subject.GetComponent<IPlaceableObj>().Place(subject.transform.position))
                     {
                         subject = null;
                     }
                 }
             }
-            else if (Mode == BuildMode.Wall)
+            else if(Mode == BuildMode.Wall)
             {
-                Ray r = new Ray(Owner.transform.position + Owner.transform.forward * 8, Vector3.down);
-                Debug.Log("Click: " + r.origin);
-                RaycastHit hit;
-                Debug.DrawRay(r.origin, r.direction * 10f, Color.red);
-                if (Physics.Raycast(r, out hit, Mathf.Infinity))
-                {
-                    Debug.Log("Hit.");
-
-                    IClickable c = hit.collider.gameObject.GetComponent<IClickable>();
-                    if (c != null)
+                Ray r = new Ray(Owner.transform.position + Owner.transform.forward * 8,Vector3.down);
+                    Debug.Log("Click: " + r.origin);
+                    RaycastHit hit;
+                    Debug.DrawRay(r.origin, r.direction * 10f, Color.red);
+                    if (Physics.Raycast(r, out hit, Mathf.Infinity))
                     {
-                        Debug.Log("Click action: " + hit.point);
-                        c.ClickAction(hit.point);
+                        Debug.Log("Hit.");
+
+                        IClickable c = hit.collider.gameObject.GetComponent<IClickable>();
+                        if (c != null)
+                        {
+                            Debug.Log("Click action: " + hit.point);
+                            c.ClickAction(hit.point);
+                        }
                     }
                 }
-            }
             else { Debug.Log("Error Build mode not set correctly"); }
         }
-        else if (GamePad.GetButtonDown(GamePad.Button.B, Player))
+        else if(Input.GetKeyDown(KeyCode.P))
         {
-            if (subject != null)
-            {
-                GameObject.Destroy(subject.gameObject);
-                subject = null;
-                isBuilding = false;
-                Mode = BuildMode.last;
-            }
+            GameObject.Destroy(subject.gameObject);
+            subject = null;
+            isBuilding = false;
+            Mode = BuildMode.last;
         }
     }
 

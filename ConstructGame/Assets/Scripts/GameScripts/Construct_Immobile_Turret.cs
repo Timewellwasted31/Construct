@@ -16,7 +16,7 @@ public class Construct_Immobile_Turret : Construct_Immobile
     GameObject Barrel;
     Projectile Temp = null;
 
-    public override void Controlles() { TurretControlles(); }
+    public override void Controlles() { TurretControllesTest(); }
 
     public override void SetUp(Transform Player, GamePad.Index PlayerNum)
     {
@@ -43,24 +43,17 @@ public class Construct_Immobile_Turret : Construct_Immobile
 
     public void TurretControlles()
     {
+        Debug.Log(GamePad.GetAxis(GamePad.Axis.RightStick, Player));
         LookLocation = Vector3.zero;
-        if (GamePad.GetAxis(GamePad.Axis.LeftStick, Player) != Vector2.zero)
+        if (GamePad.GetAxis(GamePad.Axis.RightStick, Player) != Vector2.zero)
         {
-            LookLocation.x = GamePad.GetAxis(GamePad.Axis.LeftStick, Player).x;
-            LookLocation.z = GamePad.GetAxis(GamePad.Axis.LeftStick, Player).y;
+            LookLocation.x = GamePad.GetAxis(GamePad.Axis.RightStick, Player).x;
+            LookLocation.z = GamePad.GetAxis(GamePad.Axis.RightStick, Player).y;
         }
-        Vector3 targetDir = LookLocation;
-        float step = 1f * Time.deltaTime;
-        Vector3 newDir = Vector3.RotateTowards(Turret.transform.forward, targetDir, step, 0.0F);
-        Turret.transform.rotation = Quaternion.LookRotation(newDir);
-        timer -= Time.deltaTime;
-        timer = Mathf.Clamp(timer, 0, Mathf.Infinity);
-        if (GamePad.GetTrigger(GamePad.Trigger.LeftTrigger, Player) != 0 && timer == 0)
-        {
-            Shoot();
-        }
+        LookLocation = LookLocation + Turret.transform.position;
+        Turret.transform.LookAt(LookLocation);
     }
-    /*KeyBoard Controlles
+
     public void TurretControllesTest()
     {
         LookLocation = Vector3.zero;
@@ -91,7 +84,7 @@ public class Construct_Immobile_Turret : Construct_Immobile
             Shoot();
         }
     }
-    */
+
 
     void Shoot()
     {
