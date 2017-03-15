@@ -27,7 +27,7 @@ public class Construct_Humanoid : ConstructData
     TurretTypes Ttype = TurretTypes.last;
     GameObject subject;
 
-    public override void Controlles() { HumanoidControlles(); HumanoidControllesTest()}
+    public override void Controlles() { HumanoidControlles(); HumanoidControllesTest(); }
 
 
     public override void SetUp(Transform Player, GamePad.Index PlayerNum)
@@ -441,7 +441,7 @@ public class Construct_Humanoid : ConstructData
 
             {
 
-                Ray r = new Ray(Owner.transform.position + Owner.transform.forward * 8, Vector3.down);
+                Ray r = new Ray(Owner.transform.position + Owner.transform.forward * 8 + Vector3.up * 8, Vector3.down);
 
                 Debug.Log("Click: " + r.origin);
 
@@ -518,13 +518,12 @@ public class Construct_Humanoid : ConstructData
         {
             subject.transform.position = Owner.transform.position + ((Owner.transform.forward * 8) + Owner.transform.up * 10);
         }
-        if (Input.GetKeyDown(KeyCode.O))
+        if (GamePad.GetButtonDown(GamePad.Button.A, Player))
         {
             if (Mode == BuildMode.Turrets)
             {
                 if (Ttype != TurretTypes.last && subject == null)
                 {
-                    Debug.Log("Getting Turret");
                     subject = ConstructDirectory.GetTurret(Ttype);
                 }
                 else
@@ -537,7 +536,7 @@ public class Construct_Humanoid : ConstructData
             }
             else if (Mode == BuildMode.Wall)
             {
-                Ray r = new Ray(Owner.transform.position + Owner.transform.forward * 8, Vector3.down);
+                Ray r = new Ray(Owner.transform.position + ((Owner.transform.forward * 8) + Owner.transform.up * 10), Vector3.down);
                 Debug.Log("Click: " + r.origin);
                 RaycastHit hit;
                 Debug.DrawRay(r.origin, r.direction * 10f, Color.red);
@@ -555,15 +554,17 @@ public class Construct_Humanoid : ConstructData
             }
             else { Debug.Log("Error Build mode not set correctly"); }
         }
-        else if (Input.GetKeyDown(KeyCode.P))
+        else if (GamePad.GetButtonDown(GamePad.Button.B, Player))
         {
-            GameObject.Destroy(subject.gameObject);
-            subject = null;
-            isBuilding = false;
-            Mode = BuildMode.last;
+            if (subject != null)
+            {
+                GameObject.Destroy(subject.gameObject);
+                subject = null;
+                isBuilding = false;
+                Mode = BuildMode.last;
+            }
         }
     }
-
     void Shoot()
     {
         Temp = ConstructDirectory.GetProjectile(ProjectileName.Hammer);
