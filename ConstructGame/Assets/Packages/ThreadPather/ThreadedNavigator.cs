@@ -7,6 +7,12 @@ public class ThreadedNavigator : MonoBehaviour {
 
     public static ThreadedNavigator main;
 
+    public static LayerMask getPathingLayer() {
+        if (main == null) return new LayerMask();
+
+        return main.PathingLayer;
+    }
+
     [SerializeField]
     LayerMask PathingLayer;
     
@@ -361,11 +367,44 @@ public class ThreadedNavigator : MonoBehaviour {
         }
 	}
 
-    public static void PatchNavMesh(Vector3 origin, float radius) {
+    public static void PatchNavMesh(Vector3 origin) {
+        if (main == null) return;
 
+        main.StartCoroutine(main.PatchNav(origin));
     }
 
-    IEnumerator PatchNav(Vector3 origin, float radius) {
+    IEnumerator PatchNav(Vector3 origin) {
+
+        // I think I'll need this.
+        Vector3[] cardinals = new Vector3[4] { Vector3.forward, Vector3.right, Vector3.back, Vector3.left };
+
+        // a change has occured here.
+        ThreadedNavNode ChangedNode =  FindClosestNode(origin);
+
+        Vector3 neworigin = ChangedNode.getOrigin();
+        neworigin.y = m_origin.y + m_scanradius.y;
+
+        // we could probably reduce this to just changing the one node. But why?
+
+
+        Ray r = new Ray(neworigin, Vector3.down);
+
+        Vector2 searchindex = new Vector2(neworigin.x, neworigin.z);
+
+        RaycastHit[] allhits = Physics.RaycastAll(r, 2 * m_scanradius.y, PathingLayer.value);
+
+
+        // okay, so, we have all the vertical hits
+        for (int i = 0; i < allhits.Length; i++) {
+
+            for (int n = 0; n < xz_NavTable[searchindex].Count; n++) {
+                // TODO: Something.
+            }
+
+
+
+        }
+
 
 
 
@@ -421,30 +460,40 @@ public class ThreadedNavigator : MonoBehaviour {
         Vector3[] cardinals = new Vector3[4] { Vector3.forward, Vector3.right, Vector3.back, Vector3.left };
         
         // raycast along each axis, then do points to points
+        // WHY: These are the terminal nodes for each raycast from the outsides.
+        //      As the bounding space should exceed playable, outside nodes can never have exits...
+        //      It just saves a conditional check.
         for (int c = 0; c < 4; c++) {
             float boundingvalue = Mathf.Abs(Vector3.Dot(cardinals[c], bounds));
             for (float s = 0; s <= boundingvalue; s += resolution) {
                 // a step to the left
                 r.origin = origin_at_height + cardinals[c] * s;
-                hits = Physics.RaycastAll(r, bounds.y * 2, PathingLayer.value);
+                hits = Physics.RaycastAll(r, bounds.y * 2, PathingLayer.value); // TODO: this section can be balled up?
                 // Debug.DrawRay(r.origin, r.direction * bounds.y * 2, Color.blue, 0.5f, true);
-                tv2 = new Vector2(r.origin.x, r.origin.z);
-
+                tv2 = new Vector2(r.origin.x, r.origin.z); // table vector2
+                
+                // prepare table.
                 if (hits.Length > 0 && !xz_NavTable.ContainsKey(tv2))
                     xz_NavTable.Add(tv2, new List<ThreadedNavNode>());
 
+                // get all vertical hits, and prepare threaded nodes.
                 for (int n = 0; n < hits.Length; n++) {
-                    xz_NavTable[tv2].Add(new ThreadedNavNode(hits[n].point));
-                    Ray d = new Ray(hits[n].point + m_PathingHeight * Vector3.up, Vector3.zero);
-                    Ray d2 = new Ray();
+                    xz_NavTable[tv2].Add(new ThreadedNavNode(hits[n].point)); // add the hit as a node.
+                    Ray d = new Ray(hits[n].point + m_PathingHeight * Vector3.up, Vector3.zero); // get the 'rideheight' for this grid.
+                    Ray d2 = new Ray(); // temporary ray. But ray is a struct, so I can't just have a pointer. LAME.
                     //Debug.Log("pk: " + prekey);
                     for (int i = 0; xz_NavTable.ContainsKey(prekey) && i < xz_NavTable[prekey].Count; i++) {
-                        // now, run this against placed nodes
+                        // now, run this node against placed nodes from the last bunch.
+
+                        // load the d and d2 rays.
                         d.direction = xz_NavTable[prekey][i].getOrigin() - d.origin + m_PathingHeight * Vector3.up;
-                        // if there is no obstacle between the two nodes, they connect
                         d2.origin = xz_NavTable[prekey][i].getOrigin() + m_PathingHeight * Vector3.up;
                         d2.direction = -d.direction;
-                        
+
+
+                        // if there is no obstacle between the two nodes, they connect
+
+                        // cast one way, record an exit.
                         bool h = Physics.Raycast(d, d.direction.magnitude, PathingLayer.value);
                         if (!h) {
                             xz_NavTable[tv2][n].addExit(new WeightedThreadedNavNodeExit(xz_NavTable[prekey][i], d.direction.magnitude));
@@ -453,6 +502,7 @@ public class ThreadedNavigator : MonoBehaviour {
                             Debug.DrawRay(d.origin, 0.5f * d.direction, Color.red, 1f, false);
                         }
 
+                        // cast hte other way, record an exit.
                         h = Physics.Raycast(d2, d2.direction.magnitude, PathingLayer.value);
                         if (!h) {
                             xz_NavTable[prekey][i].addExit(new WeightedThreadedNavNodeExit(xz_NavTable[tv2][n], d.direction.magnitude));
@@ -461,29 +511,38 @@ public class ThreadedNavigator : MonoBehaviour {
                             Debug.DrawRay(d2.origin, 0.5f * d2.direction, Color.red, 1f, false);
                         }
 
+                        // stray exits aren't really a problem. There is a risk they will be chosen, but as they can't be pathed to normally, they shouldn't occur commonly.
+                        // I suppose, there's a risk of 'crawlspacing'...we'll look into that.
+
+                        // throttle. Seriously, there has to be something better.
                         if (Time.realtimeSinceStartup - realtime > m_ScanDeltaMax) {
-                            realtime = Time.realtimeSinceStartup;
                             yield return null;
+                            realtime = Time.realtimeSinceStartup;
                         }
 
                     }
 
                 }
                 
-                prekey = tv2;
+                prekey = tv2; // set prekey, for next run
+
+                // another throttle. Seriously...
                 if (Time.realtimeSinceStartup - realtime > m_ScanDeltaMax) {
-                    realtime = Time.realtimeSinceStartup;
                     yield return null;
+                    realtime = Time.realtimeSinceStartup;
                 }
             }
         }
         //Debug.Log("p: " + prekey);
+
+        
 
         int y = 0;
 
         Vector3 location, secondlocation, thirdlocation;
         Vector2 search, secondaddy;
         float nextlast, last;
+        // also here: tv2 and the r brothers
 
         // now we use the cardinals to do each quadrant. for each axis:
         for (int c = 0; c < cardinals.Length; c++) {
@@ -586,18 +645,18 @@ public class ThreadedNavigator : MonoBehaviour {
                                     Debug.DrawLine(r.origin, xz_NavTable[secondaddy][q].getOrigin() + (resolution / 4f) * Vector3.up, Color.red, 0.5f);
                                 }
 
-                                // second half not here yet.
+                                // TODO: Is something missing? I think it's complete...
 
-                                if (Time.realtimeSinceStartup - realtime > m_ScanDeltaMax) { realtime = Time.realtimeSinceStartup; yield return null; }
+                                if (Time.realtimeSinceStartup - realtime > m_ScanDeltaMax) { yield return null; realtime = Time.realtimeSinceStartup; }
 
                             }
                         }
                         
                         // then take a step to the right
-                        if (Time.realtimeSinceStartup - realtime > m_ScanDeltaMax) { realtime = Time.realtimeSinceStartup; yield return null; }
+                        if (Time.realtimeSinceStartup - realtime > m_ScanDeltaMax) { yield return null; realtime = Time.realtimeSinceStartup; }
                     }
 
-                    if (Time.realtimeSinceStartup - realtime > m_ScanDeltaMax) { realtime = Time.realtimeSinceStartup; yield return null; }
+                    if (Time.realtimeSinceStartup - realtime > m_ScanDeltaMax) { yield return null; realtime = Time.realtimeSinceStartup; }
                 }
 
                 

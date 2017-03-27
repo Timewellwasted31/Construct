@@ -190,7 +190,7 @@ public class ConstructEnemy : MonoBehaviour, IAmEnemy {
         Movement = offset.normalized;
         Debug.DrawLine(transform.position, transform.position + Movement, Color.red);
 
-        if (Physics.Raycast(new Ray(transform.position, Movement), 5f*Time.deltaTime * MoveSpeed, LayerMask.NameToLayer("Terrain"))) {
+        if (Physics.Raycast(new Ray(transform.position, Movement), 5f*Time.deltaTime * MoveSpeed, ThreadedNavigator.getPathingLayer().value)) {
             NavPath.Clear();
             Debug.Log("obstructed by changed terrain.. Clearing Navpath.");
             return;
