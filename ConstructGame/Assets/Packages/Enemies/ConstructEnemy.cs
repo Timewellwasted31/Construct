@@ -22,6 +22,23 @@ public class ConstructEnemy : MonoBehaviour, IAmEnemy {
         }
     }
 
+    public static ConstructEnemy GetNearestEnemyTo(Vector3 WorldPosition) {
+        if (EnemyList == null) return null;
+        ConstructEnemy c = null;
+        float f = Mathf.Infinity;
+        float t = 0;
+        for (int i = 0; i < EnemyList.Count; i++) {
+            t = (EnemyList[i].transform.position - WorldPosition).sqrMagnitude;
+
+            if (t < f) {
+                t = f;
+                c = EnemyList[i];
+            }
+        }
+
+        return c;
+    }
+
     [SerializeField] protected float MoveSpeed = 5f;
     [SerializeField] protected float SteeringAngle = 0f; // y axis steering angle
     [SerializeField] protected float SteerSpeed = 0f;
@@ -141,6 +158,7 @@ public class ConstructEnemy : MonoBehaviour, IAmEnemy {
 
     protected void Start()
     {
+        if (EnemyList == null) EnemyList = new List<ConstructEnemy>();
         EnemyList.Add(this);
         NavPath = new List<Vector3>();
     }
