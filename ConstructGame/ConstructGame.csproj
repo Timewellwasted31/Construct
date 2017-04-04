@@ -79,8 +79,9 @@
     <Compile Include="Assets\GamePadInput\GamePad.cs" />
     <Compile Include="Assets\Packages\Enemies\ConstructEnemy.cs" />
     <Compile Include="Assets\Packages\Enemies\EnemyPortal.cs" />
+    <Compile Include="Assets\Packages\Enemies\GeometricEnemies\TriSpiderEnemy.cs" />
+    <Compile Include="Assets\Packages\Enemies\GeometricEnemies\WormEnemy.cs" />
     <Compile Include="Assets\Packages\Enemies\IAmEnemy.cs" />
-    <Compile Include="Assets\Packages\Enemies\WormEnemy.cs" />
     <Compile Include="Assets\Packages\SiegeLevel\PathTest.cs" />
     <Compile Include="Assets\Packages\SiegeLevel\Scripts\ClickController.cs" />
     <Compile Include="Assets\Packages\SiegeLevel\Scripts\IClickable.cs" />
