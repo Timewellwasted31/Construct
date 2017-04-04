@@ -22,6 +22,23 @@ public class ConstructEnemy : MonoBehaviour, IAmEnemy {
         }
     }
 
+    public static List<ConstructEnemy> GetEnemiesNear(Vector3 WorldPosition, float radius) {
+        if (EnemyList == null) return null;
+
+        List<ConstructEnemy> near = new List<ConstructEnemy>();
+
+        float rsqr = Mathf.Pow(radius, 2);
+
+        for (int i = 0; i < EnemyList.Count; i++) {
+            if ((EnemyList[i].transform.position - WorldPosition).sqrMagnitude < rsqr) {
+                near.Add(EnemyList[i]);
+            }
+        }
+
+        return near;
+
+    }
+
     public static ConstructEnemy GetNearestEnemyTo(Vector3 WorldPosition) {
         if (EnemyList == null) return null;
         ConstructEnemy c = null;
@@ -31,7 +48,7 @@ public class ConstructEnemy : MonoBehaviour, IAmEnemy {
             t = (EnemyList[i].transform.position - WorldPosition).sqrMagnitude;
 
             if (t < f) {
-                t = f;
+                f = t;
                 c = EnemyList[i];
             }
         }
@@ -106,6 +123,9 @@ public class ConstructEnemy : MonoBehaviour, IAmEnemy {
             if (myPath.Count == 0 || myPath[myPath.Count - 1] != exit) {
                 myPath.Add(exit);
             }
+            Debug.Log("Pre-cut: " + myPath.Count);
+            ShortenPath();
+            Debug.Log("Post-cut: " + myPath.Count);
 
             // Debug.Log("Path length: " + myPath.Count);
         }
@@ -216,7 +236,10 @@ public class ConstructEnemy : MonoBehaviour, IAmEnemy {
 
         // Debug.Log("what?" + offset);
 
-        transform.position += Time.deltaTime * MoveSpeed * Movement;
+        Vector3 movementVector = Time.deltaTime * MoveSpeed * Movement;
+
+        transform.position += movementVector;
+        transform.rotation = Quaternion.LookRotation(movementVector, Vector3.up);
 
         // now prune all nodes below index
         if (index > 0) NavPath.RemoveRange(0, index);
@@ -228,6 +251,31 @@ public class ConstructEnemy : MonoBehaviour, IAmEnemy {
                 NavPath.Clear();
             }
         }
+
+    }
+
+    public void ShortenPath() {
+        if (NavPath == null || NavPath.Count < 2) return;
+
+        for (int n = 0; n < NavPath.Count - 1; n++) {
+            for (int i = NavPath.Count - 1; i > n; i--) {
+                float dist = (NavPath[n] - NavPath[i]).magnitude;
+                Ray r = new Ray(NavPath[n] + RideHeight * Vector3.up, NavPath[i] - NavPath[n]);
+
+                if (Physics.Raycast(r, dist, ThreadedNavigator.getPathingLayer().value)) {
+                    // obstructed
+                    continue;
+                }
+
+                Debug.DrawLine(r.origin, r.origin + dist * r.direction, Color.blue, 1.0f);
+
+                // unobstructed between node n and node i.
+                // remove all nodes between n and i.
+                NavPath.RemoveRange(n + 1, i - n - 1);
+                break;
+            }
+        }
+
 
     }
 
@@ -291,6 +339,32 @@ public class ConstructEnemy : MonoBehaviour, IAmEnemy {
         Escape();
     }
 
+    protected void StickToGround(float OverrideHeight = 0f) {
+
+        if (OverrideHeight == 0) OverrideHeight = RideHeight;
+
+        Ray r = new Ray(transform.position, Vector3.down);
+
+        Vector3 newpos = transform.position - OverrideHeight * Vector3.up;
+
+        if (Physics.Raycast(r, out groundcheck, Mathf.Infinity, ThreadedNavigator.getPathingLayer().value)) {
+            // we hit the ground casting down.
+            newpos = groundcheck.point + OverrideHeight * Vector3.up;
+            Debug.Log("hit on " + groundcheck.collider.name);
+        } else {
+            // there is nothing below us. This is troubling. Let's look up.
+            r.direction = Vector3.up;
+            if (Physics.Raycast(r, out groundcheck)) {
+                // we found something above us
+                newpos = groundcheck.point + OverrideHeight * Vector3.up;
+            } else {
+                // Bin(); // we found nothing. Bin this enemy.
+                return;
+            }
+        }
+        transform.position = newpos;
+    }
+
     /*
      * BASE UPDATE
      * Provides required physics for running enemies. Does no internal logic.
@@ -303,25 +377,7 @@ public class ConstructEnemy : MonoBehaviour, IAmEnemy {
         // Current in nonmovement mode for speed testing.
         // transform.position += transform.rotation * (Time.deltaTime * Movement);
 
-        Ray r = new Ray(transform.position, Vector3.down);
-        
-        Vector3 newpos = transform.position - RideHeight * Vector3.up;
-
-        if (Physics.Raycast(r, out groundcheck)) {
-            // we hit the ground casting down.
-            newpos = groundcheck.point + RideHeight * Vector3.up;
-        }else{
-            // there is nothing below us. This is troubling. Let's look up.
-            r.direction = Vector3.up;
-            if (Physics.Raycast(r, out groundcheck)) {
-                // we found something above us
-                newpos = groundcheck.point + RideHeight * Vector3.up;
-            } else {
-                // Bin(); // we found nothing. Bin this enemy.
-                return;
-            }
-        }
-        transform.position = newpos;
+        StickToGround();
 
         StandardMovement();
         TryCubeCapture();

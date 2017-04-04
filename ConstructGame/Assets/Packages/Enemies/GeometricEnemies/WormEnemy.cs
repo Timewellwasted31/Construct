@@ -17,14 +17,17 @@ public class WormEnemy : ConstructEnemy
     [SerializeField] float SegmentSpacing = 1.5f;
 
     // movement variables
+    [Header("Movement")]
     [SerializeField] float SinOctave; // sets the wavelength
     [SerializeField] float WaveAmplitude; // sets the amplitude
     [SerializeField] float WaveDelay; // sets the offset between segments.
     [SerializeField] float TransformDampen = 0.95f; // lerp for segment position
     [SerializeField] float OctaveDampen = 1f; // lerp for segment position
     [SerializeField] float AmpDampen = 1f; // lerp for segment position
+    [SerializeField] float delta_amp = 2f;
 
     // leap attack
+    [Header("Leap")]
     [SerializeField] float LeapSpeed = 1.0f; // sets the speed during leap movement.
     Vector3 LeapTarget; // holds terminal point for the leap attack
     float LeapHeight; // holds the highest height attainable
@@ -64,15 +67,15 @@ public class WormEnemy : ConstructEnemy
 
     int counter = 1;
 
-	// Update is called once per frame
-	void Update () {
+    // Update is called once per frame
+    new void Update () {
         base.Update();
 
         if (EnemyInBin) return;
 
-        delta += Time.deltaTime;
+        delta += delta_amp * Time.deltaTime;
 
-        if (delta > 5 * counter)
+        if (delta > 5 * counter && false)
         {
             counter++;
             if (AIAttackStatus != EnemyAttackStatus.Leap)
